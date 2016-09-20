@@ -220,6 +220,8 @@ class Ceph(Cluster):
                 common.pdsh(osds, 'sudo zpool create -f -O xattr=sa -m legacy osd-device-%s-data /dev/disk/by-partlabel/osd-device-%s-data' % (device, device)).communicate()
                 common.pdsh(osds, 'sudo zpool add osd-device-%s-data log /dev/disk/by-partlabel/osd-device-%s-zil' % (device, device)).communicate()
                 common.pdsh(osds, 'sudo mount %s -t zfs osd-device-%s-data %s/osd-device-%s-data' % (mount_opts, device, self.mnt_dir, device)).communicate()
+            elif fs == 'bluefs':
+                logger.info('Using BlueStore, not creating a file system.')
             else: 
                 # do mkfs and mount in 1 long command
                 # alternative is to wait until make_osds to mount it
@@ -232,7 +234,7 @@ class Ceph(Cluster):
                 mkfs_cmd += '"'
 
                 mkfs_threads.append((device, common.pdsh(osds, mkfs_cmd)))
-        for device, t in mkfs_threads:  # for tmpfs and zfs cases, thread list is empty
+        for device, t in mkfs_threads:  # for tmpfs, zfs, and bluefs cases, thread list is empty
             logger.info('for device %d on all hosts awaiting mkfs and mount'%device)
             t.communicate()
 
