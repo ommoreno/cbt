@@ -39,6 +39,7 @@ class LibrbdFio(Benchmark):
         self.volumes_per_client = config.get('volumes_per_client', 1)
         self.procs_per_volume = config.get('procs_per_volume', 1)
         self.random_distribution = config.get('random_distribution', None)
+        self.norandommap = config.get('norandommap', False);
         self.rate_iops = config.get('rate_iops', None)
         self.poolname = "cbt-librbdfio"
         self.use_existing_volumes = config.get('use_existing_volumes', False)
@@ -163,6 +164,8 @@ class LibrbdFio(Benchmark):
             fio_cmd += ' --time_based'
         if self.random_distribution is not None:
             fio_cmd += ' --random_distribution=%s' % self.random_distribution
+        if (self.norandommap == True):
+            fio_cmd += ' --norandommap'
         if self.log_avg_msec is not None:
             fio_cmd += ' --log_avg_msec=%s' % self.log_avg_msec
         if self.rate_iops is not None:
