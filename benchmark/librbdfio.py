@@ -32,6 +32,7 @@ class LibrbdFio(Benchmark):
         self.log_avg_msec = config.get('log_avg_msec', None)
 #        self.ioengine = config.get('ioengine', 'libaio')
         self.op_size = config.get('op_size', 4194304)
+        self.bssplit = config.get('bssplit', None)
         self.pgs = config.get('pgs', 2048)
         self.vol_size = config.get('vol_size', 65536)
         self.vol_order = config.get('vol_order', 22)
@@ -145,6 +146,11 @@ class LibrbdFio(Benchmark):
             fio_cmd += ' --ramp_time=%s' % self.ramp
         fio_cmd += ' --numjobs=%s' % self.numjobs
         fio_cmd += ' --direct=1'
+        # Block split for a mixed workload
+        if self.bssplit is not None:
+            fio_cmd += '--bssplit=%s' % self.bssplit
+        else:
+            fio_cmd += ' --bs=%dB' % self.op_size
         fio_cmd += ' --bs=%dB' % self.op_size
         fio_cmd += ' --iodepth=%d' % self.iodepth
         fio_cmd += ' --end_fsync=%s' % self.end_fsync
