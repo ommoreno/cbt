@@ -114,6 +114,9 @@ class LibrbdFio(Benchmark):
             recovery_callback = self.recovery_callback
             self.cluster.create_recovery_test(self.run_dir, recovery_callback)
 
+        # reset perf counters
+        self.cluster.reset_perf()
+
         logger.info('Running rbd fio %s test.', self.mode)
         ps = []
         for i in xrange(self.volumes_per_client):
@@ -127,6 +130,9 @@ class LibrbdFio(Benchmark):
             self.cluster.wait_recovery_done()
 
         monitoring.stop(self.run_dir)
+
+        # dump perf counters
+        self.cluster.dump_perf(self.run_dir)
 
         # Finally, get the historic ops
         self.cluster.dump_historic_ops(self.run_dir)

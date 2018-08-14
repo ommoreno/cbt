@@ -397,6 +397,12 @@ class Ceph(Cluster):
     def dump_config(self, run_dir):
         common.pdsh(settings.getnodes('osds'), 'sudo %s -c %s --admin-daemon /var/run/ceph/ceph-osd.0.asok config show > %s/ceph_settings.out' % (self.ceph_cmd, self.tmp_conf, run_dir)).communicate()
 
+    def reset_perf(self):
+        common.pdsh(settings.getnodes('osds'), 'for i in `ls /var/lib/ceph/osd | cut -d"-" -f2`;do sudo %s -c %s daemon osd.$i perf reset all;done' % (self.ceph_cmd, self.tmp_conf)).communicate()
+
+    def dump_perf(self, run_dir):
+        common.pdsh(settings.getnodes('osds'), 'for i in `ls /var/lib/ceph/osd | cut -d"-" -f2`;do sudo %s -c %s daemon osd.$i perf dump > %s/osd${i}.json;done' % (self.ceph_cmd, self.tmp_conf, run_dir)).communicate()
+
     def dump_historic_ops(self, run_dir):
         common.pdsh(settings.getnodes('osds'), 'find /var/run/ceph/*.asok -maxdepth 1 -exec sudo %s --admin-daemon {} dump_historic_ops \; > %s/historic_ops.out' % (self.ceph_cmd, run_dir)).communicate()
 
