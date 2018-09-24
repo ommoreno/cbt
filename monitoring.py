@@ -7,6 +7,7 @@ def start(directory):
     collectl_dir = '%s/collectl' % directory
     # perf_dir = '%s/perf' % directory
     # blktrace_dir = '%s/blktrace' % directory
+    dstat_dir = '%s/dstat' % directory
 
     # collectl
     rawdskfilt = 'cciss/c\d+d\d+ |hd[ab] | sd[a-z]+ |dm-\d+ |xvd[a-z] |fio[a-z]+ | vd[a-z]+ |emcpower[a-z]+ |psv\d+ |nvme[0-9]n[0-9]+p[0-9]+ '
@@ -23,6 +24,9 @@ def start(directory):
     #     common.pdsh(osds, 'cd %s;sudo blktrace -o device%s -d /dev/disk/by-partlabel/osd-device-%s-data'
     #                 % (blktrace_dir, device, device))
 
+    # dstat
+    common.pdsh(nodes, 'mkdir -p -m0755 -- %s' % dstat_dir)
+    common.pdsh(nodes, 'dstat -tcmyd --disk-util -n --output %s/dstat.csv &' % dstat_dir)
 
 def stop(directory=None):
     nodes = settings.getnodes('clients', 'osds', 'mons', 'rgws')
@@ -34,6 +38,7 @@ def stop(directory=None):
         sc = settings.cluster
         common.pdsh(nodes, 'cd %s/perf;sudo chown %s.%s perf.data' % (directory, sc.get('user'), sc.get('user')))
         make_movies(directory)
+    common.pdsh(nodes, 'sudo pkill -9 dstat').communicate()
 
 
 def make_movies(directory):
