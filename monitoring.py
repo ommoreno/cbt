@@ -24,6 +24,26 @@ class Monitoring(object):
             return PerfMonitoring(mconfig)
         if monitoring == 'blktrace':
             return BlktraceMonitoring(mconfig)
+        if monitoring == 'dstat':
+            return DstatMonitoring(mconfig)
+
+class DstatMonitoring(Monitoring):
+    def __init__(self, mconfig):
+        super(DstatMonitoring, self).__init__(mconfig)
+
+        self.args = mconfig.get('args', '-tcmydn --output {dstat_dir}/dstat.csv 1')
+
+    def start(self, directory):
+        dstat_dir = '%s/dstat' % directory
+        common.pdsh(self.nodes, 'mkdir -p -m0755 -- %s' % dstat_dir).communicate()
+        common.pdsh(self.nodes, ['dstat', self.args.format(dstat_dir=dstat_dir)])
+
+    def stop(self, directory):
+        common.pdsh(self.nodes, 'killall -SIGINT -f dstat').communicate()
+
+    @staticmethod
+    def _get_default_nodes():
+        return ['clients', 'osds', 'mons', 'rgws']
 
 class CollectlMonitoring(Monitoring):
     def __init__(self, mconfig):
