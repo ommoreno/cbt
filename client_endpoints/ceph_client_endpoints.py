@@ -25,6 +25,7 @@ class CephClientEndpoints(ClientEndpoints):
         self.data_pool_profile = config.get('data_pool_profile', None)
         self.order = config.get('order', 22)
         self.disabled_features = config.get('disabled_features', None)
+        self.use_existing_pool = config.get('use_existing_pool', False)
 
         # get the list of mons
         self.mon_addrs  = []
@@ -46,12 +47,14 @@ class CephClientEndpoints(ClientEndpoints):
     def create_fs(self):
         self.pool = self.name
         self.data_pool = self.name
-        self.cluster.rmpool(self.pool, self.pool_profile)
-        self.cluster.mkpool(self.pool, self.pool_profile, 'cephfs')
+        if not self.use_existing_pool:
+            self.cluster.rmpool(self.pool, self.pool_profile)
+            self.cluster.mkpool(self.pool, self.pool_profile, 'cephfs')
         if self.data_pool_profile:
             self.data_pool = '%s-data' % self.name
-            self.cluster.rmpool(self.data_pool, self.data_pool_profile)
-            self.cluster.mkpool(self.data_pool, self.data_pool_profile, 'cephfs')
+            if not self.use_existing_pool:
+                self.cluster.rmpool(self.data_pool, self.data_pool_profile)
+                self.cluster.mkpool(self.data_pool, self.data_pool_profile, 'cephfs')
         else:
             self.data_pool = self.pool
         fs_new_cmd = 'sudo %s -c %s fs new %s %s %s' % (self.ceph_cmd,
@@ -81,26 +84,29 @@ class CephClientEndpoints(ClientEndpoints):
         self.pool = self.name
         dp_option = ''
 
-        self.cluster.rmpool(self.pool, self.pool_profile)
-        self.cluster.mkpool(self.pool, self.pool_profile, 'rbd')
+        if not self.use_existing_pool:
+            self.cluster.rmpool(self.pool, self.pool_profile)
+            self.cluster.mkpool(self.pool, self.pool_profile, 'rbd')
         if self.data_pool_profile:
             self.data_pool = '%s-data' % self.name
             dp_option = '--data-pool %s' % self.data_pool
-            self.cluster.rmpool(self.data_pool, self.data_pool_profile)
-            self.cluster.mkpool(self.data_pool, self.data_pool_profile, 'rbd')
+            if not self.use_existing_pool:
+                self.cluster.rmpool(self.data_pool, self.data_pool_profile)
+                self.cluster.mkpool(self.data_pool, self.data_pool_profile, 'rbd')
 
-        for node in common.get_fqdn_list('clients'):
-            for ep_num in range(0, self.endpoints_per_client):
-                rbd_name = self.get_rbd_name(node, ep_num)
+        if not self.use_existing_pool:
+            for node in common.get_fqdn_list('clients'):
+                for ep_num in xrange(0, self.endpoints_per_client):
+                    rbd_name = self.get_rbd_name(node, ep_num)
 
-                # Make the RBD Image
-                cmd = '%s -c %s create %s --pool %s --size %s %s --order %s' % (self.rbd_cmd, self.tmp_conf, rbd_name, self.pool, self.endpoint_size, dp_option, self.order)
-                common.pdsh(settings.getnodes('head'), cmd, continue_if_error=False).communicate()
-
-                # Disable Features
-                if self.disabled_features:
-                    cmd = 'sudo %s feature disable %s/%s %s' % (self.rbd_cmd, self.pool, rbd_name, self.disabled_features)
+                    # Make the RBD Image
+                    cmd = '%s -c %s create %s --pool %s --size %s %s --order %s' % (self.rbd_cmd, self.tmp_conf, rbd_name, self.pool, self.endpoint_size, dp_option, self.order)
                     common.pdsh(settings.getnodes('head'), cmd, continue_if_error=False).communicate()
+
+                    # Disable Features
+                    if self.disabled_features:
+                        cmd = 'sudo %s feature disable %s/%s %s' % (self.rbd_cmd, self.pool, rbd_name, self.disabled_features)
+                        common.pdsh(settings.getnodes('head'), cmd, continue_if_error=False).communicate()
 
     def mount_rbd(self):
         for ep_num in range(0, self.endpoints_per_client):
