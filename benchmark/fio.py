@@ -194,7 +194,7 @@ class Fio(Benchmark):
 
         monitoring.start(self.run_dir)
 
-        time.sleep(5)
+        time.sleep(10)
 
         # Run the backfill testing thread if requested
         if 'recovery_test' in self.cluster.config:
