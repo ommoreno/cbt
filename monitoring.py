@@ -55,7 +55,7 @@ class CollectlMonitoring(Monitoring):
     def start(self, directory):
         collectl_dir = '%s/collectl' % directory
         common.pdsh(self.nodes, 'mkdir -p -m0755 -- %s' % collectl_dir).communicate()
-        common.pdsh(self.nodes, ['collectl', self.args.format(collectl_dir=collectl_dir)])
+        #common.pdsh(self.nodes, ['collectl', self.args.format(collectl_dir=collectl_dir)])
 
     def stop(self, directory):
         common.pdsh(self.nodes, 'killall -SIGINT -f collectl').communicate()
